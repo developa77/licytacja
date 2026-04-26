@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kartel Exchange - High Stakes</title>
+    <title>Kartel Exchange - Persistence Mode</title>
     <style>
         body {
             font-family: 'Courier New', Courier, monospace;
-            background: black url('image_0.png') no-repeat center center fixed;
+            background: #050505 url('image_0.png') no-repeat center center fixed;
             background-size: cover;
             display: flex;
             justify-content: center;
@@ -18,22 +18,32 @@
         }
 
         .container {
-            background: rgba(10, 10, 10, 0.95);
+            background: rgba(10, 10, 10, 0.96);
             padding: 30px;
             border-radius: 8px;
             border: 2px solid #5a0000;
             box-shadow: 0 0 40px rgba(139, 0, 0, 0.7);
             width: 95%;
-            max-width: 550px;
+            max-width: 650px;
             text-align: center;
             backdrop-filter: blur(10px);
+        }
+
+        /* Sekcja Opisu */
+        .auction-description {
+            background: rgba(40, 40, 40, 0.3);
+            border-left: 4px solid #8b0000;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+            font-size: 0.9em;
+            line-height: 1.4;
         }
 
         #timer-box {
             font-size: 3.5em;
             color: #444; 
             margin-bottom: 10px;
-            transition: color 0.5s;
         }
 
         .timer-label { font-size: 0.25em; display: block; color: #888; letter-spacing: 2px; }
@@ -43,7 +53,7 @@
         #bid-alert { height: 25px; color: #f1c40f; font-weight: bold; margin: 15px 0; text-transform: uppercase; font-size: 0.9em; }
 
         .current-price {
-            font-size: 3.8em;
+            font-size: 4em;
             color: #ff3333;
             margin: 15px 0;
             font-weight: bold;
@@ -71,14 +81,23 @@
         button:disabled { background-color: #111; color: #333; cursor: not-allowed; border: 1px solid #000; }
 
         .error { color: #ff4444; background: rgba(255, 0, 0, 0.1); padding: 10px; border-radius: 4px; margin-top: 15px; display: none; }
+
+        .reset-link { margin-top: 30px; font-size: 0.7em; color: #333; cursor: pointer; text-decoration: underline; }
     </style>
 </head>
 <body>
 
 <div class="container">
+    <div class="auction-description">
+        <strong>OPIS LICYTACJI:</strong><br>
+        Przedmiotem aukcji jest teren przeładunkowy w porcie (Sektor B). 
+        Zwycięzca przejmuje pełną kontrolę nad logistyką w tym regionie. 
+        Wymagane dyskretne hasła dostępu. Zasady: Brak podbijania własnych ofert.
+    </div>
+
     <div id="timer-box">
         <span class="timer-label" id="timer-status">CZEKAMY NA OTWARCIE</span>
-        <span id="time-display">09:00</span>
+        <span id="time-display">08:40</span>
     </div>
 
     <h1>Kartel Exchange</h1>
@@ -101,6 +120,7 @@
     </div>
 
     <div id="error-msg" class="error"></div>
+    <div class="reset-link" onclick="resetAuction()">Resetuj system (tylko dla admina)</div>
 </div>
 
 <script>
@@ -109,21 +129,34 @@
         "g2": { id: "grupa2", name: "EKIPA MEDELLIN", pass: "medellin123" }
     };
 
-    let currentPrice = 100000; // Start od 100k
-    let lastBidderId = "";
-    let timeLeft = 520; 
-    let auctionStarted = false;
-    let auctionActive = true;
+    // Inicjalizacja danych z LocalStorage lub wartości domyślne
+    let currentPrice = parseInt(localStorage.getItem('auc_price')) || 100000;
+    let lastBidderId = localStorage.getItem('auc_lastBidder') || "";
+    let lastBidderName = localStorage.getItem('auc_lastBidderName') || "";
+    let timeLeft = parseInt(localStorage.getItem('auc_time')) || 60;
+    let auctionStarted = localStorage.getItem('auc_started') === 'true';
+    let auctionActive = localStorage.getItem('auc_active') !== 'false';
     let timerInterval = null;
 
-    function startTimer() {
-        auctionStarted = true;
+    // Uruchomienie interfejsu po odświeżeniu
+    window.onload = function() {
+        updateUI(lastBidderName);
+        if (auctionStarted && auctionActive) {
+            resumeTimer();
+        } else if (!auctionActive) {
+            endAuction();
+        }
+    };
+
+    function resumeTimer() {
         document.getElementById('timer-status').innerText = "POZOSTAŁY CZAS";
         document.getElementById('timer-box').style.color = "#f1c40f";
+        auctionStarted = true;
         
         timerInterval = setInterval(() => {
             if (!auctionActive) return;
             timeLeft--;
+            localStorage.setItem('auc_time', timeLeft);
             updateTimerDisplay();
             if (timeLeft <= 0) endAuction();
         }, 1000);
@@ -166,28 +199,41 @@
         }
 
         if (amount < 10000) {
-            showError("MINIMALNE PRZEBICIE TO 10 000 $.");
+            showError("MINIMUM +10 000 $.");
             return;
         }
 
-        // Pierwsze podbicie aktywuje wszystko
         if (!auctionStarted) {
-            startTimer();
+            auctionStarted = true;
+            localStorage.setItem('auc_started', 'true');
+            resumeTimer();
         }
 
         currentPrice += amount;
         lastBidderId = currentGroup.id;
+        lastBidderName = currentGroup.name;
 
-        // Logika 15 sekund
+        // Zapis stanu
+        localStorage.setItem('auc_price', currentPrice);
+        localStorage.setItem('auc_lastBidder', lastBidderId);
+        localStorage.setItem('auc_lastBidderName', lastBidderName);
+
         if (timeLeft < 10) {
             timeLeft = 15;
-            document.getElementById('bid-alert').innerText = "GORĄCA KOŃCÓWKA: 15s!";
-        } else {
-            document.getElementById('bid-alert').innerText = currentGroup.name + " PRZEJMUJE KONTROLĘ!";
+            localStorage.setItem('auc_time', 15);
         }
 
-        updateUI(currentGroup.name);
+        updateUI(lastBidderName);
         clearInputs();
+    }
+
+    function updateUI(name) {
+        document.getElementById('display-price').innerText = currentPrice.toLocaleString('pl-PL') + " $";
+        updateTimerDisplay();
+        if (name) {
+            document.getElementById('status-text').innerText = "PROWADZI: " + name;
+            document.getElementById('bid-alert').innerText = name + " PRZEJMUJE KONTROLĘ!";
+        }
     }
 
     function bidCustom() {
@@ -196,19 +242,22 @@
         bid(val);
     }
 
-    function updateUI(name) {
-        document.getElementById('display-price').innerText = currentPrice.toLocaleString('pl-PL') + " $";
-        document.getElementById('status-text').innerText = "PROWADZI: " + name;
-    }
-
     function endAuction() {
         auctionActive = false;
+        localStorage.setItem('auc_active', 'false');
         clearInterval(timerInterval);
         document.getElementById('time-display').innerText = "KONIEC";
         document.getElementById('timer-status').innerText = "ZAKOŃCZONO";
         document.getElementById('bid-alert').innerText = "SPRZEDANE!";
         document.getElementById('b1').disabled = true;
         document.getElementById('b2').disabled = true;
+    }
+
+    function resetAuction() {
+        if(confirm("Czy na pewno chcesz zrestartować licytację i wyczyścić pamięć?")) {
+            localStorage.clear();
+            location.reload();
+        }
     }
 
     function showError(text) {
