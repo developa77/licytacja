@@ -90,14 +90,14 @@
 <div class="container">
     <div class="auction-description">
         <strong>OPIS LICYTACJI:</strong><br>
-        Przedmiotem aukcji jest teren przeładunkowy w porcie (Sektor B). 
-        Zwycięzca przejmuje pełną kontrolę nad logistyką w tym regionie. 
-        Wymagane dyskretne hasła dostępu. Zasady: Brak podbijania własnych ofert.
+        HOLA! Przedmiotem aukcji jest tajne miejsce do sadzenia marihuany oraz przeróbki.
+        Ekipa, która wygra licytacje dostanie dostęp na pełny tydzień. 
+        Po upływie czasu może przedłużyć okres kolejną wpłatą wcześniej poinformowaną.
     </div>
 
     <div id="timer-box">
         <span class="timer-label" id="timer-status">CZEKAMY NA OTWARCIE</span>
-        <span id="time-display">08:40</span>
+        <span id="time-display">10:00</span>
     </div>
 
     <h1>Kartel Exchange</h1>
@@ -125,15 +125,15 @@
 
 <script>
     const groups = {
-        "g1": { id: "grupa1", name: "EKIPA MADRYT", pass: "madryt123" },
-        "g2": { id: "grupa2", name: "EKIPA MEDELLIN", pass: "medellin123" }
+        "g1": { id: "grupa1", name: "EKIPA NC", pass: "Jlodkiej96&%(54" },
+        "g2": { id: "grupa2", name: "EKIPA DA", pass: "Pojuyekieb65412}{" }
     };
 
     // Inicjalizacja danych z LocalStorage lub wartości domyślne
     let currentPrice = parseInt(localStorage.getItem('auc_price')) || 100000;
     let lastBidderId = localStorage.getItem('auc_lastBidder') || "";
     let lastBidderName = localStorage.getItem('auc_lastBidderName') || "";
-    let timeLeft = parseInt(localStorage.getItem('auc_time')) || 60;
+    let timeLeft = parseInt(localStorage.getItem('auc_time')) || 600;
     let auctionStarted = localStorage.getItem('auc_started') === 'true';
     let auctionActive = localStorage.getItem('auc_active') !== 'false';
     let timerInterval = null;
